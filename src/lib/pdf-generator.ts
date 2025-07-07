@@ -172,154 +172,6 @@ export function generateAnalysisReport(
     yPosition += 60;
   };
 
-  // Add file analysis card with proper container
-  const addFileAnalysisCard = (fileAnalysis: any) => {
-    // Calculate total height needed for this file
-    const issueCount = Math.min(fileAnalysis.issues?.length || 0, 3);
-    const estimatedHeight = 50 + (issueCount * 35) + 20; // Header + issues + padding
-    
-    checkPageBreak(estimatedHeight);
-    
-    const startY = yPosition;
-    
-    // Main file container
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(1);
-    
-    // File header section
-    const headerHeight = 40;
-    doc.rect(margin, yPosition, contentWidth, headerHeight, 'FD');
-    
-    // Header background with subtle gradient effect
-    doc.setFillColor(248, 250, 252);
-    doc.rect(margin + 1, yPosition + 1, contentWidth - 2, headerHeight - 2, 'F');
-    
-    // Left accent bar for file
-    doc.setFillColor(59, 130, 246);
-    doc.rect(margin, yPosition, 4, headerHeight, 'F');
-    
-    // File icon container
-    const iconX = margin + 15;
-    const iconY = yPosition + 12;
-    doc.setFillColor(59, 130, 246);
-    doc.roundedRect(iconX, iconY, 16, 16, 2, 2, 'F');
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(iconX + 2, iconY + 2, 12, 12, 1, 1, 'F');
-    
-    // File name
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(31, 41, 55);
-    const fileName = fileAnalysis.file_path.length > 45 ? 
-      '...' + fileAnalysis.file_path.slice(-42) : 
-      fileAnalysis.file_path;
-    doc.text(safeText(fileName), iconX + 25, yPosition + 18);
-    
-    // File score badge
-    const fileScoreColor = fileAnalysis.debt_score > 70 ? [239, 68, 68] :
-                          fileAnalysis.debt_score > 40 ? [245, 158, 11] :
-                          [34, 197, 94];
-    
-    // Score badge background
-    const badgeX = pageWidth - margin - 80;
-    const badgeY = yPosition + 10;
-    doc.setFillColor(fileScoreColor[0], fileScoreColor[1], fileScoreColor[2], 0.1);
-    doc.roundedRect(badgeX, badgeY, 70, 20, 10, 10, 'F');
-    doc.setDrawColor(fileScoreColor[0], fileScoreColor[1], fileScoreColor[2]);
-    doc.setLineWidth(1);
-    doc.roundedRect(badgeX, badgeY, 70, 20, 10, 10, 'D');
-    
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(fileScoreColor[0], fileScoreColor[1], fileScoreColor[2]);
-    doc.text(`Score: ${fileAnalysis.debt_score}/100`, badgeX + 35, badgeY + 13, { align: 'center' });
-    
-    yPosition += headerHeight + 5;
-    
-    // Issues container
-    if (fileAnalysis.issues && fileAnalysis.issues.length > 0) {
-      const issues = fileAnalysis.issues.slice(0, 3);
-      
-      issues.forEach((issue: any, issueIndex: number) => {
-        const severityColor = issue.severity === 'high' ? [239, 68, 68] :
-                             issue.severity === 'medium' ? [245, 158, 11] :
-                             [34, 197, 94];
-        
-        // Issue container
-        const issueHeight = 30;
-        doc.setFillColor(250, 251, 252);
-        doc.rect(margin + 10, yPosition, contentWidth - 20, issueHeight, 'F');
-        doc.setDrawColor(severityColor[0], severityColor[1], severityColor[2], 0.3);
-        doc.setLineWidth(0.5);
-        doc.rect(margin + 10, yPosition, contentWidth - 20, issueHeight, 'D');
-        
-        // Left severity indicator
-        doc.setFillColor(severityColor[0], severityColor[1], severityColor[2]);
-        doc.rect(margin + 10, yPosition, 3, issueHeight, 'F');
-        
-        // Severity icon (circle)
-        doc.setFillColor(severityColor[0], severityColor[1], severityColor[2]);
-        doc.circle(margin + 25, yPosition + 10, 4, 'F');
-        
-        // Issue type and severity
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(severityColor[0], severityColor[1], severityColor[2]);
-        const issueType = safeText(issue.type || 'Code Issue');
-        const severity = safeText(issue.severity || 'medium');
-        doc.text(`${issueType} (${severity})`, margin + 35, yPosition + 10);
-        
-        // Issue description
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(75, 85, 99);
-        const cleanDescription = safeText(issue.description || 'No description available');
-        const descLines = doc.splitTextToSize(cleanDescription, contentWidth - 80);
-        const displayLine = descLines[0] || '';
-        doc.text(safeText(displayLine), margin + 35, yPosition + 20);
-        
-        yPosition += issueHeight + 3;
-        
-        // Suggestion container (if exists)
-        if (issue.suggestion) {
-          const suggestionHeight = 18;
-          doc.setFillColor(239, 246, 255);
-          doc.rect(margin + 15, yPosition, contentWidth - 30, suggestionHeight, 'F');
-          doc.setDrawColor(59, 130, 246, 0.3);
-          doc.setLineWidth(0.5);
-          doc.rect(margin + 15, yPosition, contentWidth - 30, suggestionHeight, 'D');
-          
-          // Suggestion icon
-          doc.setFillColor(59, 130, 246);
-          doc.circle(margin + 25, yPosition + 9, 3, 'F');
-          
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(59, 130, 246);
-          doc.text('Suggestion:', margin + 35, yPosition + 9);
-          
-          doc.setFont('helvetica', 'normal');
-          doc.setTextColor(75, 85, 99);
-          const cleanSuggestion = safeText(issue.suggestion);
-          const suggestionLines = doc.splitTextToSize(cleanSuggestion, contentWidth - 90);
-          const displaySuggestion = suggestionLines[0] || '';
-          doc.text(safeText(displaySuggestion), margin + 75, yPosition + 9);
-          
-          yPosition += suggestionHeight + 3;
-        }
-      });
-    }
-    
-    // Bottom border for the entire file container
-    const totalHeight = yPosition - startY;
-    doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(1);
-    doc.rect(margin, startY, contentWidth, totalHeight, 'D');
-    
-    yPosition += 15; // Space between files
-  };
-
   // Start document
   addHeader();
   addWatermark();
@@ -372,19 +224,112 @@ export function generateAnalysisReport(
     yPosition += summaryHeight + 20;
   }
 
-  // File Analysis with redesigned containers
+  // File Analysis
   if (analysis.file_analyses.length > 0) {
     addSectionHeader('Detailed File Analysis', [245, 158, 11]);
     
-    // Add section description
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(107, 114, 128);
-    doc.text('Individual file analysis with identified issues and recommendations', margin, yPosition);
-    yPosition += 20;
-    
-    analysis.file_analyses.slice(0, 8).forEach((fileAnalysis, index) => {
-      addFileAnalysisCard(fileAnalysis);
+    analysis.file_analyses.slice(0, 10).forEach((fileAnalysis, index) => {
+      checkPageBreak(50);
+      
+      // File header
+      doc.setFillColor(255, 255, 255);
+      doc.rect(margin, yPosition, contentWidth, 30, 'F');
+      doc.setDrawColor(229, 231, 235);
+      doc.setLineWidth(0.5);
+      doc.rect(margin, yPosition, contentWidth, 30);
+      
+      // File icon
+      doc.setFillColor(59, 130, 246);
+      doc.rect(margin + 10, yPosition + 10, 12, 12, 'F');
+      doc.setFillColor(255, 255, 255);
+      doc.rect(margin + 11, yPosition + 11, 10, 10, 'F');
+      
+      // File name
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(31, 41, 55);
+      const fileName = fileAnalysis.file_path.length > 50 ? 
+        '...' + fileAnalysis.file_path.slice(-47) : 
+        fileAnalysis.file_path;
+      doc.text(safeText(fileName), margin + 30, yPosition + 16);
+      
+      // File score
+      const fileScoreColor = fileAnalysis.debt_score > 70 ? [239, 68, 68] :
+                            fileAnalysis.debt_score > 40 ? [245, 158, 11] :
+                            [34, 197, 94];
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(fileScoreColor[0], fileScoreColor[1], fileScoreColor[2]);
+      doc.text(`Score: ${fileAnalysis.debt_score}/100`, margin + 30, yPosition + 26);
+      
+      yPosition += 35;
+      
+      // Issues
+      if (fileAnalysis.issues && fileAnalysis.issues.length > 0) {
+        fileAnalysis.issues.slice(0, 3).forEach((issue: any) => {
+          checkPageBreak(40);
+          
+          const severityColor = issue.severity === 'high' ? [239, 68, 68] :
+                               issue.severity === 'medium' ? [245, 158, 11] :
+                               [156, 163, 175];
+          
+          // Issue card
+          doc.setFillColor(248, 250, 252);
+          doc.rect(margin + 10, yPosition, contentWidth - 20, 25, 'F');
+          doc.setDrawColor(severityColor[0], severityColor[1], severityColor[2]);
+          doc.setLineWidth(0.5);
+          doc.rect(margin + 10, yPosition, contentWidth - 20, 25);
+          
+          // Severity indicator
+          doc.setFillColor(severityColor[0], severityColor[1], severityColor[2]);
+          doc.circle(margin + 20, yPosition + 10, 4, 'F');
+          
+          // Issue type
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(severityColor[0], severityColor[1], severityColor[2]);
+          const issueType = safeText(issue.type || 'Code Issue');
+          const severity = safeText(issue.severity || 'medium');
+          doc.text(`${issueType} (${severity})`, margin + 30, yPosition + 10);
+          
+          // Description
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(75, 85, 99);
+          const cleanDescription = safeText(issue.description || 'No description available');
+          const descLines = doc.splitTextToSize(cleanDescription, contentWidth - 50);
+          descLines.slice(0, 1).forEach((line: string, lineIndex: number) => {
+            checkPageBreak(8);
+            doc.text(safeText(line), margin + 30, yPosition + 18 + (lineIndex * 6));
+          });
+          
+          yPosition += 30;
+          
+          // Suggestion
+          if (issue.suggestion) {
+            checkPageBreak(15);
+            doc.setFontSize(9);
+            doc.setTextColor(59, 130, 246);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Suggestion: ', margin + 30, yPosition);
+            
+            doc.setFont('helvetica', 'normal');
+            const cleanSuggestion = safeText(issue.suggestion);
+            const suggestionLines = doc.splitTextToSize(cleanSuggestion, contentWidth - 70);
+            suggestionLines.slice(0, 1).forEach((line: string, lineIndex: number) => {
+              checkPageBreak(7);
+              doc.text(safeText(line), margin + 75, yPosition + (lineIndex * 6));
+            });
+            
+            yPosition += 12;
+          }
+          
+          yPosition += 10;
+        });
+      }
+      
+      yPosition += 15;
     });
   }
 
